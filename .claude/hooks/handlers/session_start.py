@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from core.base_hook import BaseHook, HookResult
 from core.logger import logger
-from core.ollama_client import ollama
+from core.llm_client import ollama  # 使用 llm_client 的向后兼容别名
 from core.document_manager import DocumentManager
 from core.config import config
 

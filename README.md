@@ -4,7 +4,7 @@
 
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 [![GitHub stars](https://img.shields.io/github/stars/Prorise-cool/Claude-Code-Multi-Agent)](https://github.com/Prorise-cool/Claude-Code-Multi-Agent)
-![Ollama](https://img.shields.io/badge/Ollama-gemma3:1b-green.svg)
+![LLM](https://img.shields.io/badge/LLM-llama.cpp-green.svg)
 ![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)
 
 <br/>
@@ -41,7 +41,7 @@
 
 **问题**：Claude Code 默认不知道你的项目是什么类型、使用什么框架、有什么依赖。每次都需要你手动描述项目背景。
 
-**解决**：通过 **Ollama 智能引擎** 自动检测项目类型（Python/Node.js/Java 等）、识别框架（Django/FastAPI/React 等），并在会话启动时自动注入项目上下文。
+**解决**：通过 **本地 LLM 智能引擎** 自动检测项目类型（Python/Node.js/Java 等）、识别框架（Django/FastAPI/React 等），并在会话启动时自动注入项目上下文。
 
 ### 痛点 2：需要手动配置各种工具和提示词
 
@@ -70,7 +70,7 @@
 
 ## ✨ 核心优势
 
-所有判断逻辑通过本地部署 **Ollama** 完成，无需编写复杂的规则引擎。提示词模板化存储在 `prompts.json`，支持持续调优和版本控制。
+所有判断逻辑通过本地部署 **LLM (llama.cpp server)** 完成，无需编写复杂的规则引擎。提示词模板化存储在 `prompts.json`，支持持续调优和版本控制。
 
 ### 🎯 300+ Skills 专家智能体
 
@@ -107,32 +107,24 @@
 ### 前置要求
 
 1. **Claude Code** - [Claude Desktop](https://claude.ai/download) 或 VS Code + Claude 扩展
-2. **Ollama**（推荐）- 智能引擎核心，用于项目检测和意图分析
+2. **LLM 服务**（推荐）- 智能引擎核心，用于项目检测和意图分析（支持 llama.cpp server）
 3. **uv**（推荐）- Python 依赖管理，比 pip 快 10 倍
 
 ### 步骤 1：安装依赖（2 分钟）
 
-#### 安装 Ollama
+#### 安装 LLM 服务 (llama.cpp server)
+
+详细安装指南请参考：[LLM 配置教程](./project_document/tutorial-llm-setup.md)
 
 ```bash
-# Windows
-winget install Ollama.Ollama
+# 简要步骤：
+# 1. 编译 llama.cpp
+git clone https://github.com/ggerganov/llama.cpp.git && cd llama.cpp && make
 
-# macOS
-brew install ollama
+# 2. 下载 GGUF 模型（如 gemma-3-1b-it-Q4_K_M.gguf）
 
-# Linux
-curl -fsSL https://ollama.com/install.sh | sh
-```
-
-#### 下载模型
-
-```bash
-# 轻量级模型，适合日常开发（推荐）
-ollama pull gemma3:1b
-
-# 可选：更强大的模型
-ollama pull llama3.2:3b
+# 3. 启动 server
+./llama-server -m /path/to/model.gguf --port 8080
 ```
 
 #### 安装 uv
@@ -156,7 +148,8 @@ cd claude-code-multi-agent
 # cp .env.example .env
 
 # 编辑 .env 文件（可选，默认配置已可用）
-# OLLAMA_MODEL = gemma3:1b
+# LLM_MODEL=gemma3:1b
+# LLM_API_BASE=http://localhost:8080
 ```
 
 ### 步骤 3：启动测试（2 分钟）
@@ -215,17 +208,17 @@ echo "requests==2.31.0" > requirements.txt
 
 ## 📖 详细安装指南
 
-### 为什么需要 Ollama？
+### 为什么需要 LLM 服务？
 
-Ollama 是本项目的 "大脑"，负责：
+LLM 服务是本项目的 "大脑"，负责：
 - **项目类型检测**：自动识别你的项目是 Python/Node.js/Java 等
 - **意图分析**：理解用户输入，判断是简单查询还是复杂任务
 - **提示词优化**：将模糊需求转化为清晰的执行计划
 - **技能推荐**：根据任务类型推荐合适的 Skills
 
-没有 Ollama，系统会降级到基础模式（仅支持手动触发 Skills）。
+没有 LLM 服务，系统会降级到基础模式（仅支持手动触发 Skills）。
 
-> 📖 **详细配置教程**：[Ollama 配置指南](./project_document/tutorial-ollama-setup.md)
+> 📖 **详细配置教程**：[LLM 配置指南](./project_document/tutorial-llm-setup.md)
 
 ### 为什么需要 uv？
 
@@ -247,8 +240,9 @@ cp .env.example .env
 编辑 `.env` 文件：
 
 ```bash
-# Ollama 模型配置
-OLLAMA_MODEL=gemma3:1b
+# LLM 模型配置
+LLM_MODEL=gemma3:1b
+LLM_API_BASE=http://localhost:8080
 
 # TTS 语音播报（可选）
 HOOKS_TTS_ENABLED=false
@@ -256,7 +250,7 @@ HOOKS_TTS_PROVIDER=pyttsx3
 ```
 
 **首次启动时，`SessionStart` Hook 会自动：**
-- ✅ 检测项目类型（通过 Ollama）
+- ✅ 检测项目类型（通过 LLM）
 - ✅ 扫描并加载所有 Skills（300+ 个）
 - ✅ 初始化文档系统（`DEVELOPMENT.md`、`KNOWLEDGE.md`、`CHANGELOG.md`）
 - ✅ 检查 Git 配置并提示工作流设置
@@ -355,7 +349,7 @@ HOOKS_TTS_PROVIDER=pyttsx3
 
 ### Hooks 工作原理
 
-本项目通过 Python Hooks 系统管理 Claude Code 的会话生命周期。每个 Hook 在特定事件触发时执行，通过 Ollama 进行智能决策。
+本项目通过 Python Hooks 系统管理 Claude Code 的会话生命周期。每个 Hook 在特定事件触发时执行，通过 LLM 进行智能决策。
 
 **核心设计理念：**
 - ✅ **文档驱动**：强制维护三个核心文档（DEVELOPMENT.md、KNOWLEDGE.md、CHANGELOG.md），会话启动时自动读取并注入上下文
@@ -413,7 +407,7 @@ flowchart TD
 
 #### Hook 类型说明
 
-| Hook | 触发时机 | 核心功能 | Ollama 作用 |
+| Hook | 触发时机 | 核心功能 | LLM 作用 |
 |------|---------|---------|------------|
 | **SessionStart** | 会话启动 | 项目初始化 | 检测项目类型、推荐 Skills |
 | **UserPromptSubmit** | 用户提交输入 | 意图分析 | 判断任务复杂度、优化提示词 |
@@ -433,8 +427,8 @@ flowchart TD
 ```python
 # .claude/hooks/handlers/session_start.py 的核心逻辑
 
-# 1. 调用 Ollama 检测项目类型
-project_info = ollama_client.detect_project_type()
+# 1. 调用 LLM 检测项目类型
+project_info = llm_client.detect_project_type()
 # 返回：{"type": "Python", "framework": "FastAPI", "version": "3.11"}
 
 # 2. 扫描 skills/ 目录
@@ -463,7 +457,7 @@ git_status = check_git_config()
 ```python
 # 用户输入："帮我实现用户登录功能"
 
-# Ollama 分析结果：
+# LLM 分析结果：
 {
     "intent": "feature_implementation",
     "complexity": "medium",
@@ -515,7 +509,7 @@ sequenceDiagram
     participant U as 用户
     participant C as Claude Code
     participant F as 文件系统
-    participant O as Ollama
+    participant O as LLM
 
     U->>C: /backend-specialist 设计 API
     C->>F: 读取 skills/backend-specialist/SKILL.md
@@ -882,7 +876,7 @@ claude-code-multi-agent/
 │   ├── hooks/                      # Python Hooks 系统
 │   │   ├── core/                   # 核心模块
 │   │   │   ├── base_hook.py        # Hook 基类
-│   │   │   ├── ollama_client.py    # Ollama 客户端
+│   │   ├── llm_client.py        # LLM 客户端 (llama.cpp server)
 │   │   │   ├── document_manager.py # 文档管理器
 │   │   │   ├── config.py           # 配置管理
 │   │   │   └── logger.py           # 日志记录
@@ -911,7 +905,7 @@ claude-code-multi-agent/
 │   ├── DEVELOPMENT.md              # 开发工作文档
 │   ├── KNOWLEDGE.md                # 项目知识库
 │   ├── CHANGELOG.md                # 变更日志
-│   ├── tutorial-ollama-setup.md    # Ollama 配置教程
+│   ├── tutorial-llm-setup.md       # LLM 配置教程 (llama.cpp server)
 │   └── tutorial-collaboration-paradigm.md # 协作范式教程
 ├── .env.example                    # 环境变量示例
 ├── pyproject.toml                  # uv 依赖配置
@@ -924,7 +918,7 @@ claude-code-multi-agent/
 
 ### 核心文档
 
-- **[Ollama 配置教程](./project_document/tutorial-ollama-setup.md)** - 详细的 Ollama 安装和模型配置指南
+- **[LLM 配置教程](./project_document/tutorial-llm-setup.md)** - 详细的 llama.cpp server 安装和模型配置指南
 - **[协作范式教程](./project_document/tutorial-collaboration-paradigm.md)** - 理解本项目的协作理念和工作流程
 - **[开发文档](./project_document/DEVELOPMENT.md)** - 当前开发进度和待办事项
 - **[项目知识库](./project_document/KNOWLEDGE.md)** - 项目的技术决策和最佳实践
@@ -944,8 +938,9 @@ claude-code-multi-agent/
 编辑 `.env` 文件：
 
 ```bash
-# ==== = Ollama 模型配置 ==== =
-OLLAMA_MODEL=gemma3:1b
+# ===== LLM 模型配置 =====
+LLM_MODEL=gemma3:1b
+LLM_API_BASE=http://localhost:8080
 
 # 可选：使用更强大的模型
 # OLLAMA_MODEL = llama3.2:3b
@@ -1081,18 +1076,18 @@ uv run python -m claude_hooks.dev
 
 ## 🐛 常见问题
 
-### Q1: Ollama 连接失败怎么办？
+### Q1: LLM 服务连接失败怎么办？
 
-**问题**：Hook 执行时提示 `Connection refused` 或 `Ollama not running`
+**问题**：Hook 执行时提示 `Connection refused` 或 `LLM not running`
 
 **解决方案**：
 
 ```bash
-# 1. 检查 Ollama 是否运行
-ollama list
+# 1. 检查 llama.cpp server 是否运行
+curl http://localhost:8080/health
 
-# 2. 如果未运行，启动 Ollama 服务
-# Windows: 从开始菜单启动 Ollama
+# 2. 如果未运行，启动 server
+./llama-server -m /path/to/model.gguf --port 8080
 # macOS/Linux:
 ollama serve
 
@@ -1151,7 +1146,11 @@ cat .claude/skills/skill-name/SKILL.md
 # 3. 重启会话，触发 SessionStart Hook 重新扫描
 ```
 
-### Q5: 如何切换 Ollama 模型？
+### Q5: 如何切换 LLM 模型？
+
+1. 下载新模型的 GGUF 文件
+2. 修改 `.env` 文件中的 `LLM_MODEL`
+3. 重新启动 llama.cpp server 并加载新模型
 
 **问题**：想使用更强大的模型
 

@@ -25,9 +25,10 @@ class HooksConfig:
     logs_dir: Path = Path.cwd() / 'logs'
     data_dir: Path = Path.cwd() / '.claude' / 'data'
 
-    # Ollama 配置
-    ollama_model: str = "gemma3:1b"  # 默认模型，可通过环境变量覆盖
-    ollama_timeout: int = 10
+    # LLM 配置 (llama.cpp server)
+    llm_model: str = "gemma3:1b"  # 默认模型，可通过环境变量覆盖
+    llm_api_base: str = "http://localhost:8080"  # llama.cpp server 地址
+    llm_timeout: int = 30  # HTTP 请求超时（秒）
 
     # 日志配置
     max_log_entries: int = 500
@@ -46,8 +47,10 @@ class HooksConfig:
 
     def __post_init__(self):
         """初始化后处理"""
-        # 从环境变量读取配置（优先读取 OLLAMA_MODEL，兼容 HOOKS_OLLAMA_MODEL）
-        self.ollama_model = os.getenv('OLLAMA_MODEL') or os.getenv('HOOKS_OLLAMA_MODEL', self.ollama_model)
+        # 从环境变量读取配置（兼容旧的 OLLAMA 环境变量）
+        self.llm_model = os.getenv('LLM_MODEL') or os.getenv('OLLAMA_MODEL', self.llm_model)
+        self.llm_api_base = os.getenv('LLM_API_BASE') or os.getenv('OLLAMA_API_BASE', self.llm_api_base)
+        self.llm_timeout = int(os.getenv('LLM_TIMEOUT', self.llm_timeout))
         self.tts_provider = os.getenv('HOOKS_TTS_PROVIDER', self.tts_provider)
         self.tts_enabled = os.getenv('HOOKS_TTS_ENABLED', 'true').lower() == 'true'
 
